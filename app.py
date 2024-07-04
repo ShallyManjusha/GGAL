@@ -80,7 +80,7 @@ def prompt_endpoint():
             if 'results' in response_json:
                 result = response_json["results"][0].get("generated_text", "No generated text")
             else:
-                result = "Error: 'results' key not found in response"
+                result = "Response JSON from {}: {}".format(url, response_json)
     
     return jsonify({'generated_text': result})
 
