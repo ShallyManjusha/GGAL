@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 import os
 import requests
 import json
@@ -25,6 +25,14 @@ def load_access():
         print("Error: Unable to retrieve access token")
         print("Response:", response.json())
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "Deployed Prompt API is created"}), 200
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
 @app.route('/load_access', methods=['GET'])
 def load_access_endpoint():
     load_access()
@@ -43,7 +51,7 @@ def prompt_endpoint():
     data = request.get_json()
     input_text = data['input']
     result = ""
-
+    
     for metric in dict_guidelines.keys():
         urls = dict_guidelines[metric]
         for url in urls:
@@ -63,7 +71,7 @@ def prompt_endpoint():
             if refresh_token_if_expired(response):
                 headers['Authorization'] = 'Bearer ' + BearerToken
                 response = requests.post(url, headers=headers, data=payload)
-
+            
             # Debugging: Print the response JSON
             response_json = response.json()
             print("Response JSON from {}: {}".format(url, response_json))
@@ -73,7 +81,7 @@ def prompt_endpoint():
                 result = response_json["results"][0].get("generated_text", "No generated text")
             else:
                 result = "Error: 'results' key not found in response"
-
+    
     return jsonify({'generated_text': result})
 
 if __name__ == '__main__':
