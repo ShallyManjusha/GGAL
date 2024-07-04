@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 import os
 import requests
@@ -25,6 +24,14 @@ def load_access():
     if not BearerToken:
         print("Error: Unable to retrieve access token")
         print("Response:", response.json())
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "Deployed Prompt API is created"}), 200
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 @app.route('/load_access', methods=['GET'])
 def load_access_endpoint():
