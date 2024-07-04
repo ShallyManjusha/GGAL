@@ -20,9 +20,13 @@ def load_access():
         'Content-Type': 'application/x-www-form-urlencoded'
     }
     response = requests.post(url, headers=headers, data=payload)
-    BearerToken = response.json().get("access_token", "")
-    if not BearerToken:
-        print("Error: Unable to retrieve access token")
+    if response.status_code == 200:
+        BearerToken = response.json().get("access_token", "")
+        if not BearerToken:
+            print("Error: Unable to retrieve access token")
+            print("Response:", response.json())
+    else:
+        print("Error: Failed to get access token")
         print("Response:", response.json())
 
 @app.route('/', methods=['GET'])
@@ -41,7 +45,8 @@ def load_access_endpoint():
 def refresh_token_if_expired(response):
     if response.status_code == 401:
         response_json = response.json()
-        if 'errors' in response_json and response_json['errors'][0]['code'] == 'authentication_token_expired':
+        if 'errors' in response_json and response_json['errors'][0]['code'] in ['authentication_token_expired', 'authentication_no_token']:
+            print("Token expired or not found, refreshing token...")
             load_access()
             return True
     return False
@@ -51,6 +56,7 @@ def prompt_endpoint():
     data = request.get_json()
     input_text = data['input']
     result = ""
+    response_details = {}
     
     for metric in dict_guidelines.keys():
         urls = dict_guidelines[metric]
@@ -72,17 +78,19 @@ def prompt_endpoint():
                 headers['Authorization'] = 'Bearer ' + BearerToken
                 response = requests.post(url, headers=headers, data=payload)
             
-            # Debugging: Print the response JSON
             response_json = response.json()
-            print("Response JSON from {}: {}".format(url, response_json))
+            response_details[url] = response_json
             
-            # Handle missing 'results' key
             if 'results' in response_json:
                 result = response_json["results"][0].get("generated_text", "No generated text")
             else:
-                result = "Response JSON from {}: {}".format(url, response_json)
+                result = "Error: 'results' key not found in response,Response JSON from {}: {}".format(url, response_json)
     
-    return jsonify({'generated_text': result})
+    
+    return jsonify({
+        'generated_text': result,
+        'details': response_details
+    })
 
 if __name__ == '__main__':
     load_access()
